@@ -1,0 +1,65 @@
+import os
+import subprocess
+from tkinter import Tk, filedialog
+
+# Suppress Tkinter deprecation warning on macOS
+os.environ["TK_SILENCE_DEPRECATION"] = "1"
+
+def stream_to_rtmp(video_file, rtmp_url):
+    """
+    Streams a local video file to an RTMP server using FFmpeg.
+
+    Args:
+        video_file (str): Path to the local video file.
+        rtmp_url (str): RTMP server URL.
+    """
+    try:
+        # FFmpeg command to stream the video to the RTMP server
+        ffmpeg_command = [
+            "ffmpeg",
+            "-re",  # Read input in real-time
+            "-i", video_file,  # Input video file
+            "-c:v", "libx264",  # Video codec
+            "-preset", "veryfast",  # Encoding speed
+            "-maxrate", "3000k",  # Maximum bitrate
+            "-bufsize", "6000k",  # Buffer size
+            "-pix_fmt", "yuv420p",  # Pixel format
+            "-g", "50",  # Keyframe interval
+            "-c:a", "aac",  # Audio codec
+            "-b:a", "128k",  # Audio bitrate
+            "-f", "flv",  # Output format for RTMP
+            rtmp_url  # RTMP server URL
+        ]
+
+        # Run the FFmpeg command
+        print(f"Streaming video: {video_file} to RTMP server: {rtmp_url}")
+        subprocess.run(ffmpeg_command, check=True)
+
+    except subprocess.CalledProcessError as e:
+        print(f"Error occurred while streaming: {e}")
+    except FileNotFoundError:
+        print("FFmpeg is not installed or not found in PATH. Please install FFmpeg and try again.")
+
+def select_file():
+    """Opens a file dialog to allow the user to select a video file."""
+    Tk().withdraw()  # Hide the root Tkinter window
+    file_path = filedialog.askopenfilename(
+        title="Select a Video File",
+        filetypes=[("Video Files", "*.mp4 *.mkv *.avi *.mov *.flv *.wmv *.webm"), ("All Files", "*.*")]
+    )
+    return file_path
+
+if __name__ == "__main__":
+    print("Welcome to the RTMP Video Streamer!")
+
+    # Ask the user to select a video file
+    video_file = select_file()
+    if not video_file:
+        print("No file selected. Exiting.")
+        exit(1)
+
+    # RTMP server URL
+    rtmp_url = "rtmp://127.0.0.1/live/B1aEkS11lx"
+
+    # Stream the video to the RTMP server
+    stream_to_rtmp(video_file, rtmp_url)
